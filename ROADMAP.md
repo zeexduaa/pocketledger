@@ -16,7 +16,7 @@ Sizes are rough guesses (S = a few hours, M = about a day, L = several days, XL 
 - [ ] **Undo delete**: a short "Undo" message instead of a confirmation dialog (S)
 - [ ] **Search and filter**: by text, category, type and amount range (M)
 - [ ] **Remember the last category** used for each type (S)
-- [ ] **Commit package-lock.json** and switch CI to `npm ci` (S)
+- [x] **Commit package-lock.json** and switch CI to `npm ci` (S)
 - [ ] **Linting and formatting**: ESLint + Prettier in CI (S)
 
 ## v0.3: your own setup

@@ -15,9 +15,8 @@ jobs:
         with:
           node-version: 22
 
-      # Switch to `npm ci` once package-lock.json is committed.
       - name: Install
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Type-check
         run: npm run typecheck
