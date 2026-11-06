@@ -13,9 +13,9 @@ Sizes are rough guesses (S = a few hours, M = about a day, L = several days, XL 
 ## v0.2: everyday use
 
 - [ ] **Edit an entry**: tap an entry to change its amount, category, date or note (M)
-- [ ] **Undo delete**: a short "Undo" message instead of a confirmation dialog (S)
+- [x] **Undo delete**: a short "Undo" message instead of a confirmation dialog (S)
 - [ ] **Search and filter**: by text, category, type and amount range (M)
-- [ ] **Remember the last category** used for each type (S)
+- [x] **Remember the last category** used for each type (S)
 - [x] **Commit package-lock.json** and switch CI to `npm ci` (S)
 - [ ] **Linting and formatting**: ESLint + Prettier in CI (S)
 

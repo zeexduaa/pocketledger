@@ -7,16 +7,19 @@ import {
   createTransaction,
   inMonth,
   monthOf,
+  removeTransaction,
+  restoreTransaction,
   shiftMonth,
   sortNewestFirst,
   summarize,
   today,
   validate,
   type Kind,
+  type Removal,
   type Transaction,
 } from './ledger.ts';
 import { formatCents, parseAmount } from './money.ts';
-import { load, newId, save } from './storage.ts';
+import { load, loadPrefs, newId, save, savePrefs } from './storage.ts';
 
 // ---- State ---------------------------------------------------------------------------------
 
@@ -24,6 +27,7 @@ const loaded = load(window.localStorage);
 let transactions: Transaction[] = loaded.transactions;
 let month = monthOf(today());
 let kind: Kind = 'expense';
+const prefs = loadPrefs(window.localStorage);
 let notice: string | null =
   loaded.skipped > 0
     ? `${loaded.skipped} saved ${loaded.skipped === 1 ? 'entry was' : 'entries were'} damaged and could not be loaded.`
@@ -54,6 +58,8 @@ const monthLabel = el('h2', { class: 'month-label', 'aria-live': 'polite' });
 const summaryBox = el('section', { class: 'summary', 'aria-label': 'Month summary' });
 const categoriesBox = el('section', { class: 'card categories', 'aria-label': 'Spending by category' });
 const listBox = el('section', { class: 'card entries', 'aria-label': 'Entries this month' });
+const toast = el('div', { class: 'toast', role: 'status', 'aria-live': 'polite' });
+toast.hidden = true;
 
 const prevButton = el('button', { type: 'button', class: 'icon', 'aria-label': 'Previous month' }, '‹');
 const nextButton = el('button', { type: 'button', class: 'icon', 'aria-label': 'Next month' }, '›');
@@ -108,6 +114,10 @@ function setKind(next: Kind): void {
   form.dataset['kind'] = kind;
   const options = kind === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
   render(categorySelect, ...options.map((c) => el('option', { value: c }, c)));
+  const remembered = prefs.lastCategory[kind];
+  if (remembered !== undefined && (options as readonly string[]).includes(remembered)) {
+    categorySelect.value = remembered;
+  }
   addButton.textContent = kind === 'expense' ? 'Add expense' : 'Add income';
 }
 
@@ -130,6 +140,8 @@ form.addEventListener('submit', (event) => {
   }
   transactions = [...transactions, createTransaction(entry, newId())];
   persist();
+  prefs.lastCategory[kind] = entry.category;
+  savePrefs(window.localStorage, prefs);
   formError.textContent = '';
   amountInput.value = '';
   noteInput.value = '';
@@ -137,6 +149,34 @@ form.addEventListener('submit', (event) => {
   update();
   amountInput.focus();
 });
+
+// ---- Undo --------------------------------------------------------------------------------
+
+const UNDO_SECONDS = 6;
+let toastTimer: number | undefined;
+
+function hideToast(): void {
+  window.clearTimeout(toastTimer);
+  toast.hidden = true;
+  render(toast);
+}
+
+/** Shows "Deleted … Undo" for a few seconds; Undo puts the entry back where it was. */
+function showUndo(removal: Removal): void {
+  window.clearTimeout(toastTimer);
+  const t = removal.transaction;
+  const undo = el('button', { type: 'button', class: 'toast-action' }, 'Undo');
+  undo.addEventListener('click', () => {
+    transactions = restoreTransaction(transactions, removal);
+    persist();
+    month = monthOf(t.date);
+    hideToast();
+    update();
+  });
+  render(toast, el('span', {}, `Deleted ${t.category} ${money(t.amount)}`), undo);
+  toast.hidden = false;
+  toastTimer = window.setTimeout(hideToast, UNDO_SECONDS * 1000);
+}
 
 // ---- Rendering -----------------------------------------------------------------------------
 
@@ -185,10 +225,12 @@ function renderList(): void {
       ...items.map((t) => {
         const remove = el('button', { type: 'button', class: 'icon delete', 'aria-label': `Delete ${t.category} ${money(t.amount)}` }, '×');
         remove.addEventListener('click', () => {
-          if (!window.confirm(`Delete ${t.category} ${money(t.amount)} on ${dayName(t.date)}?`)) return;
-          transactions = transactions.filter((x) => x.id !== t.id);
+          const result = removeTransaction(transactions, t.id);
+          if (!result.removed) return;
+          transactions = result.items;
           persist();
           update();
+          showUndo(result.removed);
         });
         return el('li', { class: `entry ${t.kind}` },
           el('div', { class: 'entry-main' },
@@ -228,6 +270,7 @@ render(
     listBox,
   ),
   el('footer', {}, 'Your data stays in this browser. Nothing is uploaded.'),
+  toast,
 );
 setKind('expense');
 update();

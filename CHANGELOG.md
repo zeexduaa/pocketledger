@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Undo after deleting an entry, instead of a confirmation dialog.
+- The form starts on the category you used last, separately for expenses and income.
 - Add expenses and income with amount, category, date and note.
 - Month view with income, spending, balance and spending by category.
 - Delete entries; export everything to CSV.

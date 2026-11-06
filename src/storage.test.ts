@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { load, newId, save, STORAGE_KEY, type KeyValueStore } from './storage.ts';
+import { load, loadPrefs, newId, PREFS_KEY, save, savePrefs, STORAGE_KEY, type KeyValueStore } from './storage.ts';
 import type { Transaction } from './ledger.ts';
 
 class MemoryStore implements KeyValueStore {
@@ -53,4 +53,19 @@ test('newId is stable for fixed inputs and differs otherwise', () => {
   assert.equal(newId(() => 0, () => 0), '0-000000');
   const ids = new Set(Array.from({ length: 500 }, () => newId()));
   assert.equal(ids.size, 500);
+});
+
+test('prefs round-trip and default to empty', () => {
+  const store = new MemoryStore();
+  assert.deepEqual(loadPrefs(store), { lastCategory: {} });
+  savePrefs(store, { lastCategory: { expense: 'Food', income: 'Salary' } });
+  assert.deepEqual(loadPrefs(store), { lastCategory: { expense: 'Food', income: 'Salary' } });
+});
+
+test('damaged prefs are ignored, valid parts kept', () => {
+  const store = new MemoryStore();
+  store.setItem(PREFS_KEY, '{nope');
+  assert.deepEqual(loadPrefs(store), { lastCategory: {} });
+  store.setItem(PREFS_KEY, JSON.stringify({ lastCategory: { expense: 42, income: 'Gift' } }));
+  assert.deepEqual(loadPrefs(store), { lastCategory: { income: 'Gift' } });
 });
