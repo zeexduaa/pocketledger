@@ -1,9 +1,14 @@
 name: Refresh lockfile
 
 # Run by hand from the Actions tab to regenerate package-lock.json
-# from package.json, e.g. after changing dependencies.
+# from package.json, e.g. after changing dependencies. The new file is
+# uploaded as an artifact and pushed to the `bot/package-lock` branch,
+# ready to review and copy into main.
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   lockfile:
@@ -22,3 +27,12 @@ jobs:
         with:
           name: package-lock
           path: package-lock.json
+
+      - name: Push to the bot/package-lock branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c bot/package-lock
+          git add package-lock.json
+          git commit -m "Regenerate package-lock.json"
+          git push --force origin bot/package-lock
