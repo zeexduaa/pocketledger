@@ -148,3 +148,27 @@ export function summarize(items: readonly Transaction[], month: string): MonthSu
 export function monthsWithEntries(items: readonly Transaction[]): string[] {
   return [...new Set(items.map((t) => monthOf(t.date)))].sort().reverse();
 }
+
+export interface Removal {
+  transaction: Transaction;
+  /** Where it was in the list, so undo can put it back in the same place. */
+  index: number;
+}
+
+/** Removes the entry with `id`. Returns the new list and what was removed (null if not found). */
+export function removeTransaction(
+  items: readonly Transaction[],
+  id: string,
+): { items: Transaction[]; removed: Removal | null } {
+  const index = items.findIndex((t) => t.id === id);
+  if (index === -1) return { items: [...items], removed: null };
+  const transaction = items[index] as Transaction;
+  return { items: [...items.slice(0, index), ...items.slice(index + 1)], removed: { transaction, index } };
+}
+
+/** Puts a removed entry back where it was. Does nothing if it's already there. */
+export function restoreTransaction(items: readonly Transaction[], removal: Removal): Transaction[] {
+  if (items.some((t) => t.id === removal.transaction.id)) return [...items];
+  const at = Math.min(Math.max(removal.index, 0), items.length);
+  return [...items.slice(0, at), removal.transaction, ...items.slice(at)];
+}

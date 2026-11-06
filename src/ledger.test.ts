@@ -4,6 +4,8 @@ import {
   createTransaction,
   isValidDate,
   monthsWithEntries,
+  removeTransaction,
+  restoreTransaction,
   shiftMonth,
   sortNewestFirst,
   summarize,
@@ -93,4 +95,29 @@ test('sortNewestFirst orders by date, then most recently added', () => {
 test('monthsWithEntries lists distinct months, newest first', () => {
   const items = [tx('expense', 1, 'Food', '2025-12-31'), tx('expense', 1, 'Food', '2026-02-01'), tx('income', 1, 'Gift', '2026-02-14')];
   assert.deepEqual(monthsWithEntries(items), ['2026-02', '2025-12']);
+});
+
+test('removeTransaction and restoreTransaction put an entry back in place', () => {
+  const items = [tx('expense', 1, 'Food', '2026-11-01'), tx('expense', 2, 'Food', '2026-11-02'), tx('expense', 3, 'Food', '2026-11-03')];
+  const middle = items[1];
+  assert.ok(middle);
+  const { items: after, removed } = removeTransaction(items, middle.id);
+  assert.deepEqual(after.map((t) => t.amount), [1, 3]);
+  assert.ok(removed);
+  assert.equal(removed.index, 1);
+  assert.deepEqual(restoreTransaction(after, removed), items);
+});
+
+test('restoreTransaction copes with a list that changed meanwhile', () => {
+  const a = tx('expense', 1, 'Food', '2026-11-01');
+  const b = tx('expense', 2, 'Food', '2026-11-02');
+  const { removed } = removeTransaction([a, b], b.id);
+  assert.ok(removed);
+  assert.deepEqual(restoreTransaction([], removed), [b]); // index past the end is clamped
+  assert.deepEqual(restoreTransaction([a, b], removed), [a, b]); // already back: no duplicate
+});
+
+test('removeTransaction with an unknown id changes nothing', () => {
+  const a = tx('expense', 1, 'Food', '2026-11-01');
+  assert.deepEqual(removeTransaction([a], 'missing'), { items: [a], removed: null });
 });

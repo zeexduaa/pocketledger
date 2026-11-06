@@ -21,7 +21,8 @@ Log what you spend and earn, see where your money went each month, and export it
 - Amounts typed the way people type them: `12.5`, `$1,250.00`, `12,50`
 - Month-by-month view with income, spending and balance
 - Spending by category, as bars with percentages
-- Delete entries, with a confirmation
+- Delete entries, with a few seconds to undo
+- Remembers the category you used last
 - Export everything to CSV (opens in Excel, Google Sheets, LibreOffice)
 - Works on phones and in dark mode
 - Money is stored as whole cents, so totals are always exact
