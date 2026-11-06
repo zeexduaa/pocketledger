@@ -1,0 +1,24 @@
+name: Refresh lockfile
+
+# Run by hand from the Actions tab to regenerate package-lock.json
+# from package.json, e.g. after changing dependencies.
+on:
+  workflow_dispatch:
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate package-lock.json
+        run: npm install --package-lock-only --no-audit --no-fund
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
